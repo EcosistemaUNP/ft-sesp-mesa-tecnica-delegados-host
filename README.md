@@ -1,87 +1,131 @@
-# 🏠 Microfrontend Host — Consumo de Bandeja de Entrada
+# 📘 Documentación de Usabilidad — Microfrontend Host: Bandeja de Entrada
 
-Este repositorio implementa el **host** dentro de una arquitectura de **microfrontends**.  
-Su función principal es **consumir vistas** expuestas por uno o varios **remotos**, como por ejemplo `BandejaEntrada`.
-
----
-
-## 🚀 Tecnologías
-
-- ⚛️ React + TypeScript  
-- ⚡ Vite como bundler  
-- 🔗 Vite Plugin Federation  
+Este documento describe cómo configurar e integrar un **host** dentro de una arquitectura de **microfrontends** utilizando Vite y React. El objetivo es consumir vistas remotas, como `BandejaEntrada`, desde otros repositorios.
 
 ---
 
-## 📦 Instalación
+## 🧰 Tecnologías Utilizadas
 
-Instala el plugin necesario para habilitar la federación entre microfrontends:
+- ⚛️ **React + TypeScript**  
+- ⚡ **Vite** como bundler  
+- 🔗 **Vite Plugin Federation** para federación de módulos
 
+---
+
+## 🛠️ Instalación y Configuración Inicial
+
+### 1. Instalar el plugin de federación
+
+```bash
 npm install @originjs/vite-plugin-federation --save-dev
+```
 
-Ahora, iremos a la configuracion basica para el host dentro de vite.config.ts
+### 2. Configurar el host en `vite.config.ts`
 
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import federation from "@originjs/vite-plugin-federation"
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import federation from '@originjs/vite-plugin-federation';
 
 export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: "host",
+      name: 'host',
       remotes: {
-        bandejaEntrada: "http://localhost:4173/assets/remoteEntry.js"
+        bandejaEntrada: 'http://localhost:4173/assets/remoteEntry.js'
       },
-      shared: ["react", "react-dom", "react-router-dom"]
+      shared: ['react', 'react-dom', 'react-router-dom']
     }),
   ],
   build: {
     modulePreload: false,
-    target: "esnext",
+    target: 'esnext',
     minify: false,
     cssCodeSplit: false
   },
-})
+});
+```
 
-**Explicacion Tecnica**: Como se puede ver, dentro del host, se tiene una estructura similar al config del remoto, pero cambian cosas importantes, en este caso, se explicara parte por parte las diferencias.
-**remotes en lugar de exposes**:
+---
+
+## 🔍 Explicación Técnica
+
+### 🔗 `remotes` vs `exposes`
+
+```ts
 remotes: {
-  bandejaEntrada: "http://localhost:4173/assets/remoteEntry.js"
+  bandejaEntrada: 'http://localhost:4173/assets/remoteEntry.js'
 }
-En este caso, bandejaEntrada es el nombre del remoto que se va a consumir.
-La url a la que apunta, es en donde se encuentra el archivo remoteEntry.js, archivo el cual es generado por el remoto, y como se menciono en la documentacion del remoto, el host, es el que consume este archivo para dar la vista dniamica.
-Esta url corresponde en este caso a produccion local con el puerto de produccion definido para el remoto.
-El nombre bandejaEntrada es el definido dentro del viteconfig del remoto
+```
 
-**aclaracion**: si se exportaron 2 vistas, se aclara mas adelante como llamarlas
-**aclaracion 2**: en caso de ser vistas de diferentes repositorios, seria en este caso algo por este estilo lo que deberia estar:
-*bandejaEntrada: "http://localhost:4173/assets/remoteEntry.js",*
-*nombreRemoto2: "http://localhost:4174/assets/remoteEntry.js"*
+- `bandejaEntrada` es el nombre del remoto definido en su `vite.config.ts`.
+- La URL apunta al archivo `remoteEntry.js` generado por el remoto.
+- Si hay múltiples remotos:
 
-**shared**:Como se menciono dentro del shared del remoto, deben estar definidas las librerias que necesitan las vistas, aunque esten instaladas en el repositorio, se deben definir en este apartado
+```ts
+remotes: {
+  bandejaEntrada: 'http://localhost:4173/assets/remoteEntry.js',
+  nombreRemoto2: 'http://localhost:4174/assets/remoteEntry.js'
+}
+```
 
-***Creacion de archivos y ajuste en app.json***
-Una vez que ya definimos las configuraciones para el viteconfig del host, tendremos que hacer unos ligeros ajustes antes de llamar las vistas al host. dado que TS no tiene forma de saber que en este caso los imports que se van a realizar para las vistas estan dentro del proyecto, ya que no existen dentro del mismo, por lo cual por eso antes de llamar las vistas, se debe de:
-**1**: Crear un archivo llamado *"declarations.d.ts"* dentro de la carpeta del proyecto, donde se definiran los imports de las vistas, en este caso, se definio de la siguiente manera:
-declare module "bandejaEntrada/BandejaEntrada";
-**2**:Dentro del archivo tsconfig.app.json, se debe ir a la linea de include, la cual por defecto deberia estar de la siguiente manera:
-*"include": ["src"]*
-Entonces, para que reconozca los archivos d.ts como el que acabamos de crear en su analiiss, debemos definirlo de la siguiente manera:
-*"include": ["src", "**/*.d.ts"]*
+### 📦 `shared`
 
+Las librerías necesarias para las vistas deben definirse explícitamente, aunque ya estén instaladas localmente:
 
-***Exportacion de las vistas***: Una vez que tenemos toda esta configuracion, podemos ir al lugar donde se quiere exporta la vista y podremos hacerlo sin problema de la siguiente manera
+```ts
+shared: ['react', 'react-dom', 'react-router-dom']
+```
 
-*import BandejaEntrada from 'bandejaEntrada/BandejaEntrada';*
-y llamar dentro de la declaracion del componente funcional o vista donde se quiere ver la visual del remoto, en este caso de ejemplo fue en la vista bandeja de entrada, para este ejemplo hay mas cosas cono un navigate pero es por parametros adicionales no relacionados con el proceso puntual de microfront, definiriamos la vista que queremos llamar dentro del return
+---
 
+## 🧩 Integración de Vistas Remotas
 
+### 1. Crear archivo de declaraciones
+
+Crea `declarations.d.ts` en la raíz del proyecto:
+
+```ts
+declare module 'bandejaEntrada/BandejaEntrada';
+```
+
+### 2. Ajustar `tsconfig.app.json`
+
+Modifica la propiedad `include`:
+
+```json
+"include": ["src", "**/*.d.ts"]
+```
+
+Esto permite que TypeScript reconozca los módulos remotos.
+
+---
+
+## 📤 Importar y Renderizar la Vista Remota
+
+Ejemplo de uso en un componente React:
+
+```tsx
 import BandejaEntrada from 'bandejaEntrada/BandejaEntrada';
-const BandejaEntradaDelegados: React.FC = () => {
-  return(
-    <BandejaEntrada/>
-  );
-}
 
-**Fin**: Si en este punto tenemos el remoto ejecutandose en produccion, podemos ejecutar npm run dev para ver la vista exportada del mismo
+const BandejaEntradaDelegados: React.FC = () => {
+  return <BandejaEntrada />;
+};
+```
+
+> 💡 Asegúrate de que el remoto esté corriendo en el puerto definido. Luego ejecuta `npm run dev` en el host para visualizar la vista integrada.
+
+---
+
+## ✅ Consideraciones Finales
+
+- Verifica que el remoto esté activo y accesible desde la URL configurada.
+- Las vistas deben estar correctamente expuestas en el `vite.config.ts` del remoto.
+- Las dependencias compartidas deben coincidir entre host y remoto para evitar conflictos.
+
+---
+
+## 🏁 Resultado Esperado
+
+Una vez completados estos pasos, el host podrá consumir y renderizar dinámicamente las vistas remotas como si fueran locales, manteniendo la independencia de cada microfrontend.
