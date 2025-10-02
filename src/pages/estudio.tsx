@@ -1,17 +1,14 @@
 
-import Estudio from 'bandejaEntrada/Estudio';
+import React from 'react';
 
+const Estudio = React.lazy(() => import('delegados/Estudio'));
 
 const Estudiovw: React.FC = () => {
-
-
     return (
         <>
-
-
-
-            {Estudio ? <Estudio/> : <p> Cargando Componente</p>}
-
+            <React.Suspense fallback={<p>Cargando Componente...</p>}>
+                <Estudio/>
+            </React.Suspense>
         </>
     );
 }

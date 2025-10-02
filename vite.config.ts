@@ -10,9 +10,13 @@ export default defineConfig({
     federation({ //Import del mcirofront
       name:"host",
       remotes:{
-        bandejaEntrada:"http://localhost:4173/assets/remoteEntry.js"
+        delegados:"http://localhost:4173/assets/remoteEntry.js"
       },
-      shared:["react", "react-dom", "react-router-dom"]
+      shared: [
+        "react", 
+        "react-dom", 
+        "react-router-dom"
+      ]
     }),
   ],
 
